@@ -1,0 +1,171 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Document Search Service",
+    "description": "Простой поисковик по текстам документов с использованием Elasticsearch",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/api/v1/search": {
+      "get": {
+        "summary": "Поиск документов по тексту",
+        "description": "Поиск по тексту документа в индексе Elasticsearch. Возвращает первые 20 документов со всеми полями БД, упорядоченные по дате создания.",
+        "operationId": "search_documents",
+        "tags": ["search"],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "Текстовый запрос для поиска",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Максимальное количество результатов",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Успешный поиск",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{doc_id}": {
+      "delete": {
+        "summary": "Удаление документа",
+        "description": "Удаляет документ из БД и индекса Elasticsearch по полю id.",
+        "operationId": "delete_document",
+        "tags": ["search"],
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "description": "ID документа для удаления",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Документ успешно удалён",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Документ не найден"
+          }
+        }
+      }
+    },
+    "/import-csv": {
+      "post": {
+        "summary": "Импорт данных из CSV",
+        "description": "Импортирует данные из CSV файла в БД и Elasticsearch",
+        "operationId": "import_csv",
+        "tags": ["import"],
+        "parameters": [
+          {
+            "name": "file_path",
+            "in": "query",
+            "required": false,
+            "description": "Путь к CSV файлу",
+            "schema": {
+              "type": "string",
+              "default": "posts.csv"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Данные импортированы"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DocumentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Уникальный ID документа"
+          },
+          "rubrics": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Массив рубрик",
+            "nullable": true
+          },
+          "text": {
+            "type": "string",
+            "description": "Текст документа"
+          },
+          "created_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Дата создания документа"
+          }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Общее количество найденных документов"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentResponse"
+            },
+            "description": "Список найденных документов"
+          }
+        }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Сообщение о результате удаления"
+          }
+        }
+      }
+    }
+  }
+}
