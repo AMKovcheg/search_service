@@ -7,13 +7,15 @@
 
 Далее нужно запустить ElasticSearch:
 
-```docker run -d \
+```
+docker run -d \
   --name elasticsearch \
   -p 9200:9200 \
   -e "discovery.type=single-node" \
   -e "xpack.security.enabled=false" \
   -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" \
-  docker.elastic.co/elasticsearch/elasticsearch:8.11.1```
+  docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+```
 
 
 Теперь запуск самого сервиса и примеры работы:
