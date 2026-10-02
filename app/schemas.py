@@ -15,8 +15,7 @@ class DocumentResponse(BaseModel):
     text: str
     created_date: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class SearchResponse(BaseModel):

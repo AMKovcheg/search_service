@@ -1,36 +1,43 @@
 import json
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Document
 from app.schemas import DocumentCreate
 
 
-def create_document(db: Session, doc: DocumentCreate) -> Document:
+async def create_document(db: AsyncSession, doc: DocumentCreate) -> Document:
     document = Document(
         rubrics=json.dumps(doc.rubrics) if doc.rubrics else None,
         text=doc.text,
-        created_date=doc.created_date
+        created_date=doc.created_date,
     )
     db.add(document)
-    db.commit()
-    db.refresh(document)
+    await db.commit()
+    await db.refresh(document)
     return document
 
 
-def get_document(db: Session, doc_id: int) -> Document:
-    return db.query(Document).filter(Document.id == doc_id).first()
+async def get_document(db: AsyncSession, doc_id: int) -> Document | None:
+    result = await db.execute(select(Document).where(Document.id == doc_id))
+    return result.scalar_one_or_none()
 
 
-def get_documents_by_ids(db: Session, ids: list) -> list:
+async def get_documents_by_ids(db: AsyncSession, ids: list) -> list:
     if not ids:
         return []
-    return db.query(Document).filter(Document.id.in_(ids)).order_by(Document.created_date.desc()).all()
+    result = await db.execute(
+        select(Document)
+        .where(Document.id.in_(ids))
+        .order_by(Document.created_date.desc())
+    )
+    return result.scalars().all()
 
 
-def delete_document(db: Session, doc_id: int) -> bool:
-    doc = db.query(Document).filter(Document.id == doc_id).first()
+async def delete_document(db: AsyncSession, doc_id: int) -> bool:
+    doc = await get_document(db, doc_id)
     if doc:
-        db.delete(doc)
-        db.commit()
+        await db.delete(doc)
+        await db.commit()
         return True
     return False
 

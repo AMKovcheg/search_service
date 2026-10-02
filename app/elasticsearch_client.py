@@ -1,9 +1,9 @@
-from elasticsearch import Elasticsearch
+from elasticsearch import AsyncElasticsearch
 from app.config import settings
 
-es_client = Elasticsearch(
+es_client = AsyncElasticsearch(
     [settings.ELASTICSEARCH_URL],
-    request_timeout=30
+    request_timeout=30,
 )
 
 INDEX_NAME = settings.ELASTICSEARCH_INDEX
@@ -17,65 +17,65 @@ INDEX_SETTINGS = {
                 "russian_analyzer": {
                     "type": "custom",
                     "tokenizer": "standard",
-                    "filter": ["lowercase", "russian_stop", "russian_stemmer"]
+                    "filter": ["lowercase", "russian_stop", "russian_stemmer"],
                 }
             },
             "filter": {
                 "russian_stop": {
                     "type": "stop",
-                    "stopwords": "_russian_"
+                    "stopwords": "_russian_",
                 },
                 "russian_stemmer": {
                     "type": "stemmer",
-                    "language": "russian"
-                }
-            }
-        }
+                    "language": "russian",
+                },
+            },
+        },
     },
     "mappings": {
         "properties": {
             "id": {"type": "integer"},
             "text": {
                 "type": "text",
-                "analyzer": "russian_analyzer"
-            }
+                "analyzer": "russian_analyzer",
+            },
         }
-    }
+    },
 }
 
 
-def create_index():
-    if not es_client.indices.exists(index=INDEX_NAME):
-        es_client.indices.create(index=INDEX_NAME, **INDEX_SETTINGS)
+async def create_index():
+    if not await es_client.indices.exists(index=INDEX_NAME):
+        await es_client.indices.create(index=INDEX_NAME, **INDEX_SETTINGS)
         print(f"Index '{INDEX_NAME}' created.")
     else:
         print(f"Index '{INDEX_NAME}' already exists.")
 
 
-def index_document(doc_id: int, text: str):
-    es_client.index(
+async def index_document(doc_id: int, text: str):
+    await es_client.index(
         index=INDEX_NAME,
         id=doc_id,
-        document={"id": doc_id, "text": text}
+        document={"id": doc_id, "text": text},
     )
 
 
-def delete_document_from_index(doc_id: int):
+async def delete_document_from_index(doc_id: int):
     try:
-        es_client.delete(index=INDEX_NAME, id=doc_id)
+        await es_client.delete(index=INDEX_NAME, id=doc_id)
     except Exception:
         pass
 
 
-def search_in_index(query: str, size: int = 20):
-    response = es_client.search(
+async def search_in_index(query: str, size: int = 20):
+    response = await es_client.search(
         index=INDEX_NAME,
-        query={
-            "match": {
-                "text": query
-            }
-        },
-        size=size
+        query={"match": {"text": query}},
+        size=size,
     )
     hits = response["hits"]["hits"]
     return [hit["_source"]["id"] for hit in hits]
+
+
+async def close_es():
+    await es_client.close()
